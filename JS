@@ -1,0 +1,149 @@
+$(document).ready(function() {
+  var pomoTime = $('#pomodoroNum');
+  var breakTime = $('#breakNum');
+  var status = $('#timerStatus');
+  var timerDisplay = $('#timer');
+  var startButton = $('#startBtn');
+  var stopButton = $('#stopBtn');
+  var breakVal = 4; // initial value of break clock when switched.
+  var state = 1; // 1=stopped 2=running
+  var countDown; // intervalID;
+  var minutes = 24;
+  var seconds = 60;
+
+  startButton.click(function() {
+    if (state == 1) { // if timer is not running then start timer
+      startTimer(minutes, seconds);
+      $('#breakMinus').off("click");
+      $('#breakPlus').off("click");
+      $('#workMinus').off("click");
+      $('#workPlus').off("click"); // disable +- controls when timer starts
+
+    };
+  });
+
+  updateDisplay(); // initially controls are enabled at the start
+
+  stopButton.on("click", function() {
+    if (state == 2) {
+      pauseTimer();
+      state = 1;
+      updateDisplay(); // renable +- controls when timer stops
+
+    }
+  });
+
+  if (status.text() == "Break") {
+    $('#workMinus').off("click");
+    $('#workPlus').off("click");
+    // disable work control when break is on.
+  }
+
+  function startTimer(m, s) {
+    state = 2;
+    var startMinutes = m;
+    var startSeconds = s;
+
+    countDown = setInterval(function() {
+
+      startSeconds--;
+      startMinutes = ("0" + startMinutes).slice(-2); // double digits conversion if <10
+      startSeconds = ("0" + startSeconds).slice(-2);
+
+      minutes = ("0" + startMinutes).slice(-2); // update minutes and seconds so when timer is stopped, it can resume from where it left off when startButton is pressed.
+      seconds = ("0" + startSeconds).slice(-2);
+
+      timerDisplay.html(startMinutes + ":" + startSeconds);
+
+      if (startSeconds <= 0 && startMinutes > 0) {
+        startMinutes -= 1; // decerement minutes when seconds 0...
+        startSeconds += 60; // ..and reset seconds to 60
+      }
+
+      if (startMinutes <= 0 && startSeconds <= 0 && status.text() == "Work") {
+        status.text("Break");
+        startMinutes = breakVal;
+        startSeconds = 60;
+        minutes = breakVal;
+        seconds = 60;
+        state = 2;
+        $(".timerContainer").css({
+          "border-color": "green"
+        });
+      };
+
+      if (startMinutes <= 0 && startSeconds <= 0 && status.text() == "Break") {
+        status.text("Work");
+        startMinutes = pomoTime.text() - 1;
+        startSeconds = 60;
+        seconds = 60;
+        state = 2;
+        $(".timerContainer").css({
+          "border-color": "red"
+        });
+      }
+
+    }, 1000);
+
+  };
+
+  function pauseTimer() {
+
+    clearInterval(countDown);
+  };
+
+  function updateDisplay() { // this function updates time and display. thought it was easier to do it one function rather than two even though readability is affected.
+    // break +-
+    $('#breakMinus').on("click", function() {
+      if (breakTime.text() > 1) {
+        breakVal = breakTime.text() - 2; // -2 because timer was always +2 than it should have been when minus control was used.
+        if (status.text() == "Break") {
+          minutes = breakTime.text() - 2;
+          seconds = 60;
+        }
+      }
+      if (breakTime.text() > 1) {
+        breakTime.text(+breakTime.text() - 1);
+      };
+      if (status.text() == "Break") {
+        timerDisplay.text(breakTime.text());
+      };
+    });
+
+    $('#breakPlus').on("click", function() {
+      breakVal = breakTime.text();
+      breakTime.text(+breakTime.text() + 1);
+      if (status.text() == "Break") {
+
+        minutes = breakTime.text() - 1;
+        seconds = 60;
+        timerDisplay.text(breakTime.text());
+      };
+    });
+
+    // work +-
+    $('#workMinus').on("click", function() {
+      if (pomoTime.text() > 1) {
+        if (status.text() == "Work")
+          minutes = pomoTime.text() - 2;
+        seconds = 60;
+      }
+      if (pomoTime.text() > 1) {
+        pomoTime.text(+pomoTime.text() - 1);
+      };
+      timerDisplay.text(pomoTime.text());
+    });
+
+    $('#workPlus').on("click", function() {
+      if (status.text() == "Work") {
+        minutes = pomoTime.text();
+        seconds = 60;
+      }
+      pomoTime.text(+pomoTime.text() + 1);
+
+      timerDisplay.html(pomoTime.html());
+
+    });
+  };
+
+});
